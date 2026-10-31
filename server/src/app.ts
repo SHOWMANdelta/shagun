@@ -21,6 +21,8 @@ import { academicRouter } from './modules/academic/academic.routes.js';
 import { attendanceRouter } from './modules/attendance/attendance.routes.js';
 import { marksRouter } from './modules/marks/marks.routes.js';
 import { noticesRouter } from './modules/notices/notices.routes.js';
+import { dashboardRouter } from './modules/dashboard/dashboard.routes.js';
+import { settingsRouter } from './modules/settings/settings.routes.js';
 
 const PgStore = connectPgSimple(session);
 const logger = pino({ name: 'app' });
@@ -120,6 +122,8 @@ export function buildApp(options: AppOptions = {}): Express {
   app.use('/api/attendance', attendanceRouter);
   app.use('/api/marks', marksRouter);
   app.use('/api/notices', noticesRouter);
+  app.use('/api/dashboard', dashboardRouter);
+  app.use('/api/settings', settingsRouter);
 
   // 404 and error handlers
   app.use(notFound);
