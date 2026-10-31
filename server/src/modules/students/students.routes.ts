@@ -112,4 +112,111 @@ studentsRouter.patch(
   }
 );
 
+// PATCH /api/students/:id/deactivate
+studentsRouter.patch(
+  '/:id/deactivate',
+  requireRole('admin'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const student = await repo.updateStudent(req.params.id, { isActive: false });
+      if (!student) return next(new AppError('Student not found', 404, 'NOT_FOUND'));
+      res.json({ data: student, meta: {} });
+    } catch (err) { next(err); }
+  }
+);
+
+// POST /api/students/import-preview
+studentsRouter.post(
+  '/import-preview',
+  requireRole('admin'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { parseCSV } = await import('../../utils/csv.js');
+      const csv = req.body.csv as string;
+      if (!csv) throw new AppError('CSV data is required', 400);
+
+      const parsed = parseCSV(csv);
+      const validRows: Record<string, string>[] = [];
+      const invalidRows: { row: Record<string, string>; reason: string }[] = [];
+
+      for (const row of parsed) {
+        if (!row.enrollment_no || !row.display_name) {
+          invalidRows.push({ row, reason: 'Missing enrollment_no or display_name' });
+        } else {
+          validRows.push(row);
+        }
+      }
+
+      res.json({ data: { validRows, invalidRows }, meta: { total: parsed.length } });
+    } catch (err) { next(err); }
+  }
+);
+
+// POST /api/students/import-confirm
+studentsRouter.post(
+  '/import-confirm',
+  requireRole('admin'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { rows, batchId } = req.body;
+      if (!Array.isArray(rows) || !batchId) {
+        throw new AppError('Invalid payload: rows and batchId required', 400);
+      }
+
+      const defaultHash = await bcrypt.hash(env.SEED_PASSWORD, 12);
+      const created: repo.StudentRow[] = [];
+
+      for (const r of rows) {
+        const student = await repo.createStudent({
+          enrollmentNo: r.enrollment_no,
+          displayName: r.display_name,
+          batchId,
+          currentSemester: parseInt(r.current_semester || '1', 10),
+          phone: r.phone,
+          address: r.address,
+          passwordHash: defaultHash,
+        });
+        created.push(student);
+      }
+
+      res.status(201).json({
+        data: {
+          importedCount: created.length,
+          credentials: created.map(s => ({
+            enrollmentNo: s.enrollment_no,
+            displayName: s.display_name,
+            defaultPassword: env.SEED_PASSWORD,
+          })),
+        },
+        meta: {},
+      });
+    } catch (err) { next(err); }
+  }
+);
+
+// GET /api/students/export/csv
+studentsRouter.get(
+  '/export/csv',
+  requireRole('admin', 'faculty'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { toCSV } = await import('../../utils/csv.js');
+      const { rows } = await repo.listStudents({ limit: 1000, offset: 0 });
+      const csvStr = toCSV(
+        rows as unknown as Record<string, unknown>[],
+        [
+          { key: 'enrollment_no', label: 'Enrollment No' },
+          { key: 'display_name', label: 'Full Name' },
+          { key: 'batch_name', label: 'Batch' },
+          { key: 'current_semester', label: 'Semester' },
+          { key: 'phone', label: 'Phone' },
+        ]
+      );
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="students.csv"');
+      res.send(csvStr);
+    } catch (err) { next(err); }
+  }
+);
+
 
