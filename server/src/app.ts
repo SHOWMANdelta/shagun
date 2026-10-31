@@ -1,44 +1,122 @@
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
+import rateLimit from 'express-rate-limit';
+import { pinoHttp } from 'pino-http';
+import pino from 'pino';
+
+import { env } from './config/env.js';
 import { pool } from './db/pool.js';
+import { requestId } from './middleware/requestId.js';
+import { csrfGuard } from './middleware/csrfGuard.js';
+import { notFound } from './middleware/notFound.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+import { authRouter } from './modules/auth/auth.routes.js';
+import { studentsRouter } from './modules/students/students.routes.js';
+import { facultyRouter } from './modules/faculty/faculty.routes.js';
+import { academicRouter } from './modules/academic/academic.routes.js';
+import { attendanceRouter } from './modules/attendance/attendance.routes.js';
+import { marksRouter } from './modules/marks/marks.routes.js';
+import { noticesRouter } from './modules/notices/notices.routes.js';
+
+const PgStore = connectPgSimple(session);
+const logger = pino({ name: 'app' });
 
 export function buildApp(): Express {
   const app = express();
 
   app.set('trust proxy', 1);
-  app.use(helmet());
-  app.use(express.json({ limit: '100kb' }));
-  app.use(
-    cors({
-      origin: true,
-      credentials: true,
-    })
-  );
 
-  // Health check endpoint
+  // Security headers
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+  // CORS — allow Vite dev server
+  app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:4000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-Requested-With', 'X-Request-Id'],
+  }));
+
+  // Request parsing
+  app.use(express.json({ limit: '100kb' }));
+  app.use(express.urlencoded({ extended: false }));
+
+  // Request ID header
+  app.use(requestId);
+
+  // HTTP request logging
+  app.use(pinoHttp({ logger }));
+
+  // Session store
+  const sessionStore = new PgStore({
+    pool,
+    tableName: 'session',
+    schemaName: 'erp',
+    createTableIfMissing: false,
+    pruneSessionInterval: 60 * 15, // prune every 15 min
+  });
+
+  app.use(session({
+    store: sessionStore,
+    secret: env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: env.COOKIE_SECURE,
+      sameSite: 'lax',
+      maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    },
+    name: 'erp.sid',
+  }));
+
+  // Global rate limiter
+  app.use('/api', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' } },
+  }));
+
+  // Stricter login rate limiter
+  app.use('/api/auth/login', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: { code: 'RATE_LIMITED', message: 'Too many login attempts. Wait 15 minutes.' } },
+  }));
+
+  // CSRF guard (mutating requests need X-Requested-With: erp)
+  app.use('/api', csrfGuard);
+
+  // Health check (no auth required)
   app.get('/api/health', async (req, res) => {
     try {
-      const result = await pool.query('SELECT 1 as healthy');
-      res.json({
-        data: {
-          status: 'ok',
-          database: result.rows[0]?.healthy === 1 ? 'up' : 'unknown',
-          timestamp: new Date().toISOString(),
-        },
-        meta: {},
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Database error';
-      res.status(503).json({
-        error: {
-          code: 'DB_UNAVAILABLE',
-          message,
-          requestId: req.headers['x-request-id'] || 'system',
-        },
-      });
+      await pool.query('SELECT 1');
+      res.json({ data: { status: 'ok', timestamp: new Date().toISOString() }, meta: {} });
+    } catch {
+      res.status(503).json({ error: { code: 'DB_UNAVAILABLE', message: 'Database unavailable', requestId: req.id } });
     }
   });
+
+  // API routes
+  app.use('/api/auth', authRouter);
+  app.use('/api/students', studentsRouter);
+  app.use('/api/faculty', facultyRouter);
+  app.use('/api/academic', academicRouter);
+  app.use('/api/attendance', attendanceRouter);
+  app.use('/api/marks', marksRouter);
+  app.use('/api/notices', noticesRouter);
+
+  // 404 and error handlers
+  app.use(notFound);
+  app.use(errorHandler);
 
   return app;
 }
