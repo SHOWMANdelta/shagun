@@ -25,7 +25,11 @@ import { noticesRouter } from './modules/notices/notices.routes.js';
 const PgStore = connectPgSimple(session);
 const logger = pino({ name: 'app' });
 
-export function buildApp(): Express {
+export interface AppOptions {
+  skipRateLimit?: boolean;
+}
+
+export function buildApp(options: AppOptions = {}): Express {
   const app = express();
 
   app.set('trust proxy', 1);
@@ -48,8 +52,10 @@ export function buildApp(): Express {
   // Request ID header
   app.use(requestId);
 
-  // HTTP request logging
-  app.use(pinoHttp({ logger }));
+  // HTTP request logging (only when not in test)
+  if (env.NODE_ENV !== 'test') {
+    app.use(pinoHttp({ logger }));
+  }
 
   // Session store
   const sessionStore = new PgStore({
@@ -74,23 +80,24 @@ export function buildApp(): Express {
     name: 'erp.sid',
   }));
 
-  // Global rate limiter
-  app.use('/api', rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 300,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' } },
-  }));
+  // Rate limiters (injectable / disabled in test mode for deterministic execution)
+  if (!options.skipRateLimit && env.NODE_ENV !== 'test') {
+    app.use('/api', rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 300,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' } },
+    }));
 
-  // Stricter login rate limiter
-  app.use('/api/auth/login', rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: { code: 'RATE_LIMITED', message: 'Too many login attempts. Wait 15 minutes.' } },
-  }));
+    app.use('/api/auth/login', rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 15,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: { code: 'RATE_LIMITED', message: 'Too many login attempts. Wait 15 minutes.' } },
+    }));
+  }
 
   // CSRF guard (mutating requests need X-Requested-With: erp)
   app.use('/api', csrfGuard);
