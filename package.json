@@ -1,0 +1,24 @@
+{
+  "name": "mini-college-erp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mini College ERP System - BCA Project No. 41 by Shagun Kaushal",
+  "author": "Shagun Kaushal",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"blue,green\" \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
+    "build": "pnpm --filter client build; pnpm --filter server build",
+    "start": "pnpm --filter server start",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:check": "pnpm --filter server db:check",
+    "db:migrate": "pnpm --filter server db:migrate",
+    "db:seed": "pnpm --filter server db:seed",
+    "db:verify": "pnpm --filter server db:verify",
+    "db:reset": "pnpm --filter server db:reset"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
