@@ -25,7 +25,14 @@ const envSchema = z.object({
   PORT: z
     .string()
     .optional()
-    .transform((val) => (val ? parseInt(val, 10) : 4000)),
+    .transform((val) => (val ? parseInt(val, 10) : 4000))
+    .pipe(
+      z
+        .number()
+        .int()
+        .min(1, 'PORT must be a valid positive port number (1-65535)')
+        .max(65535, 'PORT must be a valid positive port number (1-65535)')
+    ),
   SEED_PASSWORD: z.string().default('DemoPassword123!'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
