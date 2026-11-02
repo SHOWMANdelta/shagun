@@ -67,6 +67,12 @@ describe('Marks and Results Suite', () => {
   });
 
   it('saves marks as unpublished; students cannot see unpublished marks', async () => {
+    // 0. Reset any published leftover from a previous run so this test is deterministic
+    await pool.query(
+      'UPDATE erp.marks SET is_published = FALSE WHERE student_id = $1 AND subject_id = $2 AND exam_type_id = $3',
+      [studentId, subjectId, examTypeId]
+    );
+
     // 1. Enter valid marks as faculty/admin
     const bulkRes = await adminAgent
       .post('/api/marks/bulk')

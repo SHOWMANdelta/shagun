@@ -63,6 +63,13 @@ describe('Students and Academic Management Suite', () => {
   });
 
   it('deactivates student without deleting record (deactivate-not-delete)', async () => {
+    // 0. Clean up leftover from a previous run (tests run against a persistent DB)
+    const existingRes = await adminAgent.get('/api/students?search=24BCATEMP01');
+    for (const existing of existingRes.body.data as { id: string }[]) {
+      await pool.query('DELETE FROM erp.students WHERE id = $1', [existing.id]);
+      await pool.query("DELETE FROM erp.users WHERE identifier = '24BCATEMP01'");
+    }
+
     // 1. Create temporary student
     const createRes = await adminAgent
       .post('/api/students')
