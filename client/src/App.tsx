@@ -7,6 +7,9 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { FacultyDashboard } from './pages/FacultyDashboard';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { StudentsPage } from './pages/StudentsPage';
+import { FacultyPage } from './pages/FacultyPage';
+import { AcademicsPage } from './pages/AcademicsPage';
+import { AuditPage } from './pages/AuditPage';
 import { AttendancePage } from './pages/AttendancePage';
 import { MarksPage } from './pages/MarksPage';
 import { NoticesPage } from './pages/NoticesPage';
@@ -47,6 +50,9 @@ export default function App() {
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/students" element={<ProtectedRoute allowedRoles={['admin']}><StudentsPage /></ProtectedRoute>} />
+          <Route path="/admin/faculty" element={<ProtectedRoute allowedRoles={['admin']}><FacultyPage /></ProtectedRoute>} />
+          <Route path="/admin/academics" element={<ProtectedRoute allowedRoles={['admin']}><AcademicsPage /></ProtectedRoute>} />
+          <Route path="/admin/audit" element={<ProtectedRoute allowedRoles={['admin']}><AuditPage /></ProtectedRoute>} />
           <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={['admin']}><AttendancePage /></ProtectedRoute>} />
           <Route path="/admin/marks" element={<ProtectedRoute allowedRoles={['admin']}><MarksPage /></ProtectedRoute>} />
           <Route path="/admin/notices" element={<ProtectedRoute allowedRoles={['admin']}><NoticesPage /></ProtectedRoute>} />
