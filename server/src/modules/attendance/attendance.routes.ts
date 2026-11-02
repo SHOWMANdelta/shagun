@@ -5,9 +5,12 @@ import { z } from 'zod';
 import { query } from '../../db/pool.js';
 import { pool } from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
-import { getTodayIST } from '../../utils/istDate.js';
+import { getTodayIST, daysBetweenIST } from '../../utils/istDate.js';
 
 export const attendanceRouter = Router();
+
+/** Roster edit window in days (matches /api/settings.attendanceEditWindowDays). */
+const EDIT_WINDOW_DAYS = 7;
 
 const sessionBodySchema = z.object({
   subjectId: z.string().uuid(),
@@ -145,6 +148,19 @@ attendanceRouter.post('/bulk', requireRole('admin', 'faculty'),
       if (!sessRes.rows[0]) throw new AppError('Session not found', 404, 'NOT_FOUND');
       const sess = sessRes.rows[0] as { is_locked: boolean; session_date: string };
       if (sess.is_locked) throw new AppError('Session is locked and cannot be edited', 400, 'SESSION_LOCKED');
+
+      // Edit window rule (Phase 5): faculty may edit rosters only within 7 days of the session date.
+      // Admins are exempt so institutional corrections remain possible.
+      if (req.session.role !== 'admin') {
+        const ageDays = daysBetweenIST(sess.session_date, getTodayIST());
+        if (ageDays > EDIT_WINDOW_DAYS) {
+          throw new AppError(
+            `Roster editing closed ${EDIT_WINDOW_DAYS} days after the session date`,
+            400,
+            'EDIT_WINDOW_CLOSED'
+          );
+        }
+      }
 
       // Get faculty id (for marked_by)
       let facultyId: string | null = null;
