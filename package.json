@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"blue,green\" \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
-    "build": "pnpm --filter client build; pnpm --filter server build",
+    "build": "pnpm -r build",
     "start": "pnpm --filter server start",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
