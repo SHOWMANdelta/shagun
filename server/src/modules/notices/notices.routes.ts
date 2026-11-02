@@ -38,6 +38,29 @@ noticesRouter.get('/', requireAuth,
       const values: unknown[] = [];
       let i = 1;
 
+      // Multi-level audience targeting (Phase 6): scope notices to the requester.
+      if (req.session.role === 'student') {
+        const stRes = await query(
+          'SELECT batch_id, current_semester FROM erp.students WHERE user_id = $1',
+          [req.session.userId]
+        );
+        const st = stRes.rows[0] as { batch_id: string; current_semester: number } | undefined;
+        if (!st) return next(new AppError('Student not found', 404, 'NOT_FOUND'));
+        conditions.push(
+          `(n.target IN ('all', 'students')
+            OR (n.target = 'batch' AND n.target_batch_id = $${i})
+            OR (n.target = 'semester' AND n.target_semester = $${i + 1}))`
+        );
+        values.push(st.batch_id, st.current_semester);
+        i += 2;
+      } else if (req.session.role === 'faculty') {
+        // Faculty see global and faculty-targeted notices (plus their own posts).
+        conditions.push(`n.target IN ('all', 'faculty') OR n.created_by = $${i}`);
+        values.push(req.session.userId);
+        i += 1;
+      }
+      // Admin sees every notice — no audience restriction.
+
       if (q.search) {
         conditions.push(`(n.title ILIKE $${i} OR n.body ILIKE $${i})`);
         values.push(`%${q.search}%`);
