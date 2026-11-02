@@ -18,16 +18,26 @@
 15. Risk 5 (Authorisation Leakage): Unauthorised queries leaking existence; enforce strict 3-tier checks returning 404 for inaccessible foreign records.
 
 ## Status Log
-- Current Phase: Phase 1 - Scaffold and Preflight
+- Current Phase: COMPLETE (Phases 1-9 done; Phase 10 core docs done, viva pack optional)
 - Done:
-  - Git repository initialized with .gitattributes and LF normalization.
-  - pnpm workspace established with `client` (Vite, React, Tailwind, Lucide, Recharts) and `server` (Express, TypeScript, pg, session, helmet, pino).
-  - All workspace dependencies installed and build scripts approved (`pnpm approve-builds --all`).
-  - Strict TypeScript compilation configured and passing (`pnpm -r typecheck` -> 0 errors).
-  - Linting configured and passing (`pnpm -r lint` -> 0 errors).
-  - Environment schema and validation created; secure SESSION_SECRET generated and written to `.env`.
-  - Vite API proxy configured (`/api` -> `http://localhost:4000`).
-  - `/api/health` endpoint implemented in Express.
-- Decisions: Documented in docs/DECISIONS.md.
-- Open Issues: Blocked on Phase 1 secret (`DATABASE_URL`). Awaiting PostgreSQL connection URI in `.env`.
-- Next Command: Once `DATABASE_URL` is provided, execute the Phase 1 Gate check.
+  - Phase 1: pnpm workspace scaffold, strict TS, lint, env validation, health check, database configured.
+  - Phase 2: 6 numbered SQL migrations (erp schema), triggers, deterministic seed, db reset/verify commands.
+  - Phase 3: Session auth, lockout, rate limiting, CSRF header guard, RBAC matrix tests.
+  - Phase 4: Students + faculty management, CSV preview/confirm import, academic setup endpoints.
+  - Phase 5: Attendance roster, atomic bulk save via ON CONFLICT, IST date handling, 7-day faculty edit window.
+  - Phase 6: Notices with role/batch/semester targeting, expiry, unread tracking, audience-scoped listing.
+  - Phase 7: Marks entry with max-marks trigger, publication flow, SGPA and grading.
+  - Phase 8: Role-based dashboards (admin/faculty/student), settings, audit viewer.
+  - Phase 9: `pnpm build` passes; Express serves the Vite SPA from client/dist; login, session, dashboard stats, students list and SPA deep routes verified over HTTP on the production build.
+- Key decisions: see docs/DECISIONS.md.
+- Verification record (2026-11-02):
+  - `pnpm typecheck` - pass (0 errors, both packages).
+  - `pnpm lint` - pass (0 errors, both packages).
+  - `pnpm --filter server test` - 6 files / 32 tests passed.
+  - `pnpm --filter client test` - 1 file / 1 test passed.
+  - `pnpm build` - pass (client bundle with self-hosted fonts; server tsc).
+  - Production e2e: `/api/health` 200, `/` 200, deep route `/notices` 200, admin login + `me` + `/api/dashboard/stats` 200, `GET /api/students` 200.
+- Open Issues:
+  - Remote Postgres latency shows slow-query warnings (200ms-3s) during tests; expected for a network-hosted database, not a code defect.
+  - One transient test failure earlier was environmental (network drop killed the DB connection mid-suite); suite passed on re-run.
+- Next Command: `pnpm dev` for the demo, or `pnpm build; pnpm start` for production mode.
