@@ -37,8 +37,8 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Institutional Overview</h1>
-        <p className="text-xs text-slate-500 font-mono mt-0.5">
+        <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">Institutional Overview</h1>
+        <p className="text-eyebrow text-brand-600 mt-1">
           Mini College ERP Console • System Status & Operations
         </p>
       </div>
@@ -48,12 +48,14 @@ export function AdminDashboard() {
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.label} className="bg-white p-4 rounded border border-slate-200">
+            <div key={card.label} className="bg-white p-4 rounded-lg border border-slate-200/80 shadow-card">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">{card.label}</span>
-                <Icon size={16} className="text-teal-700" />
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{card.label}</span>
+                <span className="w-7 h-7 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center">
+                  <Icon size={15} className="text-brand-600" />
+                </span>
               </div>
-              <div className="text-2xl font-bold font-mono text-slate-900 mt-2">{card.value}</div>
+              <div className="text-2xl font-extrabold font-mono text-slate-900 mt-2 tracking-tight">{card.value}</div>
             </div>
           );
         })}
@@ -62,10 +64,10 @@ export function AdminDashboard() {
       {/* Two Column Layout: Notices & Audit */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Latest Notices */}
-        <div className="bg-white rounded border border-slate-200 p-4">
+        <div className="bg-white rounded-lg border border-slate-200/80 shadow-card p-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-              <Bell size={14} className="text-teal-700" />
+            <h2 className="text-eyebrow text-slate-500 flex items-center gap-2">
+              <Bell size={14} className="text-brand-600" />
               Recent Announcements
             </h2>
           </div>
@@ -85,10 +87,10 @@ export function AdminDashboard() {
         </div>
 
         {/* Audit Trail Preview */}
-        <div className="bg-white rounded border border-slate-200 p-4">
+        <div className="bg-white rounded-lg border border-slate-200/80 shadow-card p-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
-              <ShieldCheck size={14} className="text-teal-700" />
+            <h2 className="text-eyebrow text-slate-500 flex items-center gap-2">
+              <ShieldCheck size={14} className="text-brand-600" />
               Recent System Modifications
             </h2>
           </div>

@@ -5,7 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { AuthProvider } from './context/AuthContext';
 
 describe('Client UI Preflight', () => {
-  it('renders application login screen without crashing', async () => {
+  it('renders the login landing screen with sign-in heading and project caption', async () => {
     render(
       <AuthProvider>
         <BrowserRouter>
@@ -13,7 +13,9 @@ describe('Client UI Preflight', () => {
         </BrowserRouter>
       </AuthProvider>
     );
-    expect(await screen.findByText(/Mini College ERP/i)).toBeDefined();
-    expect(await screen.findByText(/BCA Project No\. 41 by Shagun Kaushal/i)).toBeDefined();
+    expect(await screen.findByRole('heading', { name: /welcome back/i })).toBeDefined();
+    // Brand and project captions exist in the landing header/credits (responsive duplicates allowed)
+    expect(screen.getAllByText(/Mini College ERP/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/BCA Project No\. 41 by Shagun Kaushal/i).length).toBeGreaterThan(0);
   });
 });

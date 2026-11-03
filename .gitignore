@@ -4,3 +4,8 @@ dist
 *.log
 .DS_Store
 coverage
+screenshots
+rebuild*.log
+test-*.log
+prod-server.log
+build.log
