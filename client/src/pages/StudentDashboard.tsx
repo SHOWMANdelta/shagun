@@ -90,7 +90,9 @@ export function StudentDashboard() {
                       {item.attendance_pct}%
                     </span>
                     {isShortage ? (
-                      <AlertTriangle size={14} className="text-red-500" title="Attendance Shortage" />
+                      <span title="Attendance Shortage">
+                        <AlertTriangle size={14} className="text-red-500" />
+                      </span>
                     ) : (
                       <CheckCircle2 size={14} className="text-emerald-600" />
                     )}

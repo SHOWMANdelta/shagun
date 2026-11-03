@@ -1,5 +1,9 @@
 import express, { Express } from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import helmet from 'helmet';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import cors from 'cors';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
@@ -124,6 +128,16 @@ export function buildApp(options: AppOptions = {}): Express {
   app.use('/api/notices', noticesRouter);
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/settings', settingsRouter);
+
+  // Production SPA static file serving
+  const clientDist = path.resolve(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(clientDist, 'index.html'), (err) => {
+      if (err) next();
+    });
+  });
 
   // 404 and error handlers
   app.use(notFound);
