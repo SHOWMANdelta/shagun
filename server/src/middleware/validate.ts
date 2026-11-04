@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { AnyZodObject, ZodError } from 'zod';
 import { AppError } from '../utils/AppError.js';
 
@@ -9,16 +9,26 @@ interface RequestValidationSchema {
 }
 
 export function validate(schema: RequestValidationSchema) {
-  return async (req: Request, _res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: (error?: unknown) => void) => {
     try {
       if (schema.body) {
         req.body = await schema.body.parseAsync(req.body);
       }
       if (schema.query) {
-        req.query = await schema.query.parseAsync(req.query);
+        Object.defineProperty(req, 'query', {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: await schema.query.parseAsync(req.query),
+        });
       }
       if (schema.params) {
-        req.params = await schema.params.parseAsync(req.params);
+        Object.defineProperty(req, 'params', {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: await schema.params.parseAsync(req.params),
+        });
       }
       next();
     } catch (error) {
