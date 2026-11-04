@@ -41,3 +41,10 @@
   - Remote Postgres latency shows slow-query warnings (200ms-3s) during tests; expected for a network-hosted database, not a code defect.
   - One transient test failure earlier was environmental (network drop killed the DB connection mid-suite); suite passed on re-run.
 - Next Command: `pnpm dev` for the demo, or `pnpm build; pnpm start` for production mode.
+- Phase 10 (2026-11-03): Marketing landing page separated from authentication; tabbed email-OTP and password sign-in with one-click demo consoles; Resend-backed OTP service with hashed single-use codes, cooldown and attempt caps.
+- Verification record (2026-11-03):
+  - `pnpm --filter server test` - 7 files / 39 tests passed (run sequentially; suites share one remote database).
+  - `pnpm --filter client test` - 1 file / 2 tests passed.
+  - `pnpm typecheck`, `pnpm lint`, `pnpm build` - pass (both packages).
+  - Browser: `/` renders the landing page with no auth redirect, console cards sign in for real (admin -> /admin, faculty -> /faculty with live stats), sign-out returns to `/login`, and the OTP panel reports "email service is not configured" until RESEND_API_KEY is set.
+- Known setup step: add a Resend API key to `server/.env` as `RESEND_API_KEY`; without it OTP requests return EMAIL_NOT_CONFIGURED while password sign-in keeps working.
