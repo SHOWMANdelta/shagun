@@ -12,6 +12,12 @@ export interface ApiResponse<T = unknown> {
   };
 }
 
+/** Public pages must never be bounced to the sign-in page by a 401. */
+function isPublicPath(): boolean {
+  const path = window.location.pathname;
+  return path === '/' || path.includes('/login');
+}
+
 export async function apiRequestFull<T = unknown>(
   url: string,
   options: RequestInit = {}
@@ -28,10 +34,8 @@ export async function apiRequestFull<T = unknown>(
     credentials: 'include',
   });
 
-  if (response.status === 401) {
-    if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/login?msg=session_expired';
-    }
+  if (response.status === 401 && !isPublicPath()) {
+    window.location.href = '/login?msg=session_expired';
   }
 
   const data = (await response.json()) as ApiResponse<T>;
@@ -59,10 +63,8 @@ export async function apiRequest<T = unknown>(
     credentials: 'include',
   });
 
-  if (response.status === 401) {
-    if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/login?msg=session_expired';
-    }
+  if (response.status === 401 && !isPublicPath()) {
+    window.location.href = '/login?msg=session_expired';
   }
 
   const data = (await response.json()) as ApiResponse<T>;

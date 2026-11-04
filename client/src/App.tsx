@@ -2,7 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Shell } from './components/layout/Shell';
-import { LoginPage } from './pages/LoginPage';
+import { LandingPage } from './pages/LandingPage';
+import { SignInPage } from './pages/SignInPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { FacultyDashboard } from './pages/FacultyDashboard';
 import { StudentDashboard } from './pages/StudentDashboard';
@@ -14,15 +15,6 @@ import { AttendancePage } from './pages/AttendancePage';
 import { MarksPage } from './pages/MarksPage';
 import { NoticesPage } from './pages/NoticesPage';
 import { SettingsPage } from './pages/SettingsPage';
-
-function RoleRedirect() {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role === 'admin') return <Navigate to="/admin" replace />;
-  if (user.role === 'faculty') return <Navigate to="/faculty" replace />;
-  return <Navigate to="/student" replace />;
-}
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, loading } = useAuth();
@@ -44,8 +36,8 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<RoleRedirect />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<SignInPage />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />

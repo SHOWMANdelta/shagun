@@ -11,7 +11,8 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (identifier: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<User>;
+  verifyOtp: (email: string, code: string) => Promise<User>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -43,6 +44,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ identifier, password }),
     });
     setUser(data);
+    return data;
+  };
+
+  const verifyOtp = async (email: string, code: string) => {
+    const data = await apiRequest<User>('/api/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+    setUser(data);
+    return data;
   };
 
   const logout = async () => {
@@ -54,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, verifyOtp, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
