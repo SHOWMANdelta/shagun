@@ -42,7 +42,7 @@ authRouter.post(
   (req: Request, res: Response, next: NextFunction) => {
     req.session.destroy((err) => {
       if (err) return next(err);
-      res.clearCookie('connect.sid');
+      res.clearCookie('erp.sid');
       res.json({ data: { message: 'Logged out successfully' }, meta: {} });
     });
   }
@@ -71,7 +71,7 @@ authRouter.put(
       await changePasswordService(req.session.userId!, req.body);
       req.session.destroy((err) => {
         if (err) return next(err);
-        res.clearCookie('connect.sid');
+        res.clearCookie('erp.sid');
         res.json({
           data: { message: 'Password changed. Please log in again.' },
           meta: {},
@@ -82,5 +82,4 @@ authRouter.put(
     }
   }
 );
-
 

@@ -26,7 +26,10 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 4000)),
-  SEED_PASSWORD: z.string().default('DemoPassword123!'),
+  SEED_PASSWORD: z
+    .string()
+    .min(12, 'SEED_PASSWORD must be at least 12 characters long')
+    .default(process.env.NODE_ENV === 'production' ? '' : 'DemoPassword123!'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
