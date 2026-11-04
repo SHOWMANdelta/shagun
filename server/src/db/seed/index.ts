@@ -29,9 +29,9 @@ async function seed() {
 
     // ---- ADMIN ----
     const adminRes = await client.query(`
-      INSERT INTO erp.users (role, identifier, display_name, password_hash)
-      VALUES ('admin', 'admin', 'System Administrator', $1)
-      ON CONFLICT (identifier) DO UPDATE SET display_name = EXCLUDED.display_name
+      INSERT INTO erp.users (role, identifier, display_name, password_hash, email)
+      VALUES ('admin', 'admin', 'System Administrator', $1, 'admin@college.edu')
+      ON CONFLICT (identifier) DO UPDATE SET display_name = EXCLUDED.display_name, email = EXCLUDED.email
       RETURNING id
     `, [hash]);
     const adminId = adminRes.rows[0].id;
@@ -101,14 +101,18 @@ async function seed() {
       { code: 'FAC001', name: 'Dr. Priya Sharma' },
       { code: 'FAC002', name: 'Prof. Rajan Mehta' },
     ];
+    const F_EMAILS: Record<string, string> = {
+      FAC001: 'priya.sharma@college.edu',
+      FAC002: 'rajan.mehta@college.edu',
+    };
     const facultyIds: Record<string, string> = {};
     for (const f of facultyData) {
       const uRes = await client.query(`
-        INSERT INTO erp.users (role, identifier, display_name, password_hash)
-        VALUES ('faculty', $1, $2, $3)
-        ON CONFLICT (identifier) DO UPDATE SET display_name = EXCLUDED.display_name
+        INSERT INTO erp.users (role, identifier, display_name, password_hash, email)
+        VALUES ('faculty', $1, $2, $3, $4)
+        ON CONFLICT (identifier) DO UPDATE SET display_name = EXCLUDED.display_name, email = EXCLUDED.email
         RETURNING id
-      `, [f.code, f.name, hash]);
+      `, [f.code, f.name, hash, F_EMAILS[f.code]]);
       const uId = uRes.rows[0].id;
 
       const fRes = await client.query(`
@@ -139,18 +143,18 @@ async function seed() {
 
     // ---- STUDENTS ----
     const studentsData = [
-      { enrollment: '24BCA001', name: 'Aarav Patel', semester: 1 },
-      { enrollment: '24BCA002', name: 'Diya Singh', semester: 1 },
-      { enrollment: '24BCA003', name: 'Karan Verma', semester: 1 },
+      { enrollment: '24BCA001', name: 'Aarav Patel', semester: 1, email: 'aarav.patel@college.edu' },
+      { enrollment: '24BCA002', name: 'Diya Singh', semester: 1, email: 'diya.singh@college.edu' },
+      { enrollment: '24BCA003', name: 'Karan Verma', semester: 1, email: 'karan.verma@college.edu' },
     ];
     const studentIds: Record<string, string> = {};
     for (const s of studentsData) {
       const uRes = await client.query(`
-        INSERT INTO erp.users (role, identifier, display_name, password_hash)
-        VALUES ('student', $1, $2, $3)
-        ON CONFLICT (identifier) DO UPDATE SET display_name = EXCLUDED.display_name
+        INSERT INTO erp.users (role, identifier, display_name, password_hash, email)
+        VALUES ('student', $1, $2, $3, $4)
+        ON CONFLICT (identifier) DO UPDATE SET display_name = EXCLUDED.display_name, email = EXCLUDED.email
         RETURNING id
-      `, [s.enrollment, s.name, hash]);
+      `, [s.enrollment, s.name, hash, s.email]);
       const uId = uRes.rows[0].id;
 
       const stRes = await client.query(`

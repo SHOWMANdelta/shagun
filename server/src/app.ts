@@ -103,6 +103,14 @@ export function buildApp(options: AppOptions = {}): Express {
       legacyHeaders: false,
       message: { error: { code: 'RATE_LIMITED', message: 'Too many login attempts. Wait 15 minutes.' } },
     }));
+
+    app.use('/api/auth/otp/request', rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 10,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { error: { code: 'RATE_LIMITED', message: 'Too many code requests. Wait 15 minutes.' } },
+    }));
   }
 
   // CSRF guard (mutating requests need X-Requested-With: erp)

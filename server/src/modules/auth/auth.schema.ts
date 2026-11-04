@@ -17,5 +17,16 @@ export const changePasswordSchema = z.object({
     ),
 });
 
+export const requestOtpSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email address').max(200),
+});
+
+export const verifyOtpSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email address').max(200),
+  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code').min(6).max(6),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type RequestOtpInput = z.infer<typeof requestOtpSchema>;
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;

@@ -25,16 +25,22 @@ const envSchema = z.object({
   PORT: z
     .string()
     .optional()
-    .transform((val) => (val ? parseInt(val, 10) : 4000))
-    .pipe(
-      z
-        .number()
-        .int()
-        .min(1, 'PORT must be a valid positive port number (1-65535)')
-        .max(65535, 'PORT must be a valid positive port number (1-65535)')
-    ),
+    .transform((val) => {
+      const parsedPort = val ? parseInt(val, 10) : NaN;
+      if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+        process.stderr.write(
+          `WARNING: PORT value "${val ?? '(unset)'}" is not a valid port; using default 4000.\n`
+        );
+        return 4000;
+      }
+      return parsedPort;
+    }),
   SEED_PASSWORD: z.string().default('DemoPassword123!'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  // Email OTP (Resend). Optional: OTP login reports EMAIL_NOT_CONFIGURED when missing.
+  RESEND_API_KEY: z.string().optional(),
+  OTP_SENDER_EMAIL: z.string().default('onboarding@resend.dev'),
+  OTP_SENDER_NAME: z.string().default('Mini College ERP'),
 });
 
 const parsed = envSchema.safeParse(process.env);
