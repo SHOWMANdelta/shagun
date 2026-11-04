@@ -2,6 +2,7 @@
   "name": "mini-college-erp",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Mini College ERP System - BCA Project No. 41 by Shagun Kaushal",
   "author": "Shagun Kaushal",
   "license": "UNLICENSED",
