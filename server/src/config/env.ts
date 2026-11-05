@@ -48,14 +48,21 @@ const envSchema = z.object({
 
 const parsed = envSchema.safeParse(process.env);
 
+export const envValidationIssues: string | null = !parsed.success
+  ? parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ')
+  : null;
+
 if (!parsed.success) {
   const issues = parsed.error.issues
     .map((issue) => ` - ${issue.path.join('.')}: ${issue.message}`)
     .join('\n');
   process.stderr.write(`\nEnvironment validation failed:\n${issues}\n\n`);
-  if (process.env.NODE_ENV !== 'test') {
+  if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
     process.exit(1);
   }
 }
 
-export const env = parsed.success ? parsed.data : (process.env as unknown as z.infer<typeof envSchema>);
+export const env = parsed.success
+  ? parsed.data
+  : (process.env as unknown as z.infer<typeof envSchema>);
+

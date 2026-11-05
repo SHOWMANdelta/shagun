@@ -6,22 +6,27 @@ import pino from 'pino';
 const logger = pino({ name: 'server' });
 const app = buildApp();
 
-const server = app.listen(env.PORT, () => {
-  logger.info(`Server listening on port ${env.PORT}`);
-});
-
-function gracefulShutdown(signal: string) {
-  logger.info(`Received ${signal}, draining pool and shutting down...`);
-  server.close(async () => {
-    await pool.end();
-    logger.info('Database pool drained. Process exiting.');
-    process.exit(0);
+// Only start listening when running locally or as a standalone server.
+// On Vercel, the Express app is exported and invoked by Vercel's serverless runtime.
+if (!process.env.VERCEL) {
+  const server = app.listen(env.PORT, () => {
+    logger.info(`Server listening on port ${env.PORT}`);
   });
-}
 
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  function gracefulShutdown(signal: string) {
+    logger.info(`Received ${signal}, draining pool and shutting down...`);
+    server.close(async () => {
+      await pool.end();
+      logger.info('Database pool drained. Process exiting.');
+      process.exit(0);
+    });
+  }
+
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+}
 
 export default app;
 export { app };
+
 

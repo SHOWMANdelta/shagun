@@ -38,13 +38,26 @@ export async function apiRequestFull<T = unknown>(
     window.location.href = '/login?msg=session_expired';
   }
 
-  const data = (await response.json()) as ApiResponse<T>;
-
-  if (!response.ok || data.error) {
-    throw new Error(data.error?.message || `HTTP error ${response.status}`);
+  let data: ApiResponse<T> | null = null;
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      data = (await response.json()) as ApiResponse<T>;
+    } catch {
+      // not JSON
+    }
   }
 
-  return { data: data.data, meta: data.meta ?? {} };
+  if (!response.ok || (data && data.error)) {
+    let errorMsg = data?.error?.message;
+    if (!errorMsg) {
+      const text = await response.text().catch(() => '');
+      errorMsg = text || `HTTP error ${response.status}`;
+    }
+    throw new Error(errorMsg);
+  }
+
+  return { data: data!.data, meta: data!.meta ?? {} };
 }
 
 export async function apiRequest<T = unknown>(
@@ -67,11 +80,24 @@ export async function apiRequest<T = unknown>(
     window.location.href = '/login?msg=session_expired';
   }
 
-  const data = (await response.json()) as ApiResponse<T>;
-
-  if (!response.ok || data.error) {
-    throw new Error(data.error?.message || `HTTP error ${response.status}`);
+  let data: ApiResponse<T> | null = null;
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      data = (await response.json()) as ApiResponse<T>;
+    } catch {
+      // not JSON
+    }
   }
 
-  return data.data;
+  if (!response.ok || (data && data.error)) {
+    let errorMsg = data?.error?.message;
+    if (!errorMsg) {
+      const text = await response.text().catch(() => '');
+      errorMsg = text || `HTTP error ${response.status}`;
+    }
+    throw new Error(errorMsg);
+  }
+
+  return data!.data;
 }

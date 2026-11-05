@@ -9,7 +9,7 @@ import rateLimit from 'express-rate-limit';
 import { pinoHttp } from 'pino-http';
 import pino from 'pino';
 
-import { env } from './config/env.js';
+import { env, envValidationIssues } from './config/env.js';
 import { pool } from './db/pool.js';
 import { requestId } from './middleware/requestId.js';
 import { csrfGuard } from './middleware/csrfGuard.js';
@@ -70,6 +70,19 @@ export function buildApp(options: AppOptions = {}): Express {
   // HTTP request logging (only when not in test)
   if (env.NODE_ENV !== 'test') {
     app.use(pinoHttp({ logger }));
+  }
+
+  // Early check for missing environment configuration on cloud platforms (e.g. Vercel)
+  if (envValidationIssues) {
+    app.use('/api', (req, res) => {
+      res.status(500).json({
+        error: {
+          code: 'ENV_MISCONFIGURED',
+          message: `Server environment variables are missing on Vercel: ${envValidationIssues}. Please set them in your Vercel Project Settings > Environment Variables and redeploy.`,
+        },
+      });
+    });
+    return app;
   }
 
   // Session store
