@@ -197,12 +197,51 @@ export function SignInPage() {
         </div>
       </header>
 
-      {/* Sign-in body */}
+      {/* Sign-in body — split layout */}
       <main className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-4xl grid lg:grid-cols-[1fr_420px] gap-8 items-center">
+          {/* Brand panel */}
+          <div className="hidden lg:block">
+            <div className="rounded-2xl bg-gradient-to-br from-brand-800 via-brand-700 to-[#0b3944] text-white p-8 relative overflow-hidden shadow-card-lg">
+              <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-teal-300/10" aria-hidden="true" />
+              <div
+                className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-[length:22px_22px]"
+                aria-hidden="true"
+              />
+              <div className="relative">
+                <div className="text-eyebrow text-teal-300 mb-3">One portal, every role</div>
+                <h2 className="font-display text-2xl font-bold leading-snug tracking-tight">
+                  Your campus, reduced to
+                  <span className="block text-gradient">one clean console.</span>
+                </h2>
+                <ul className="mt-6 space-y-3">
+                  {[
+                    'Admins own enrolment, faculty and the audit trail',
+                    'Faculty mark attendance and publish verified marks',
+                    'Students track attendance, results and notices live',
+                  ].map((line) => (
+                    <li key={line} className="flex items-start gap-2.5 text-[13px] font-medium text-teal-50/85">
+                      <ShieldCheck size={15} className="text-teal-300 mt-0.5 shrink-0" />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-7 rounded-xl bg-white/[0.07] border border-white/10 p-4">
+                  <div className="flex items-center gap-1.5 text-teal-300">
+                    <Mail size={12} /> <span className="text-eyebrow">One-time code</span>
+                  </div>
+                  <div className="mt-2 font-mono text-lg font-bold tracking-[0.35em]">384 912</div>
+                  <div className="text-[10px] font-mono text-teal-100/50 mt-1">emailed by Resend · expires in 10 min</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Form column */}
+          <div className="w-full max-w-md mx-auto lg:mx-0">
           <div className="text-center mb-6">
             <div className="text-eyebrow text-brand-600">Secure sign in</div>
-            <h1 className="mt-1.5 text-3xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="font-display mt-1.5 text-3xl font-bold tracking-tight text-slate-900">
               Welcome back
             </h1>
             <p className="mt-1.5 text-[13px] text-slate-500">
@@ -271,7 +310,7 @@ export function SignInPage() {
                   <button
                     type="submit"
                     disabled={sending || cooldown > 0}
-                    className="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-sm font-bold rounded-lg shadow-card transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-700 hover:to-teal-700 text-white text-sm font-bold rounded-lg shadow-card transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {sending ? 'Sending…' : cooldown > 0 ? `Resend in ${cooldown}s` : otpSent ? 'Resend code' : 'Send my code'}
                     {!sending && cooldown === 0 && <ArrowRight size={15} />}
@@ -295,8 +334,8 @@ export function SignInPage() {
                           onChange={(e) => setCodeDigit(i, e.target.value)}
                           onKeyDown={(e) => handleCodeKeyDown(i, e)}
                           maxLength={1}
-                          className={`w-11 h-14 text-center text-xl font-extrabold font-mono border rounded-lg transition focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 ${
-                            d ? 'border-brand-500 bg-brand-50' : 'border-slate-300 bg-slate-50/60'
+                          className={`w-12 h-14 text-center text-xl font-bold font-mono border rounded-lg transition focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 ${
+                            d ? 'border-brand-500 bg-gradient-to-b from-brand-50 to-white text-brand-800 shadow-card' : 'border-slate-300 bg-slate-50/60'
                           }`}
                         />
                       ))}
@@ -372,7 +411,7 @@ export function SignInPage() {
                 <button
                   type="submit"
                   disabled={pwLoading}
-                  className="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-sm font-bold rounded-lg shadow-card transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-700 hover:to-teal-700 text-white text-sm font-bold rounded-lg shadow-card transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {pwLoading ? 'Signing in…' : 'Sign In'} <ArrowRight size={15} />
                 </button>
@@ -397,6 +436,7 @@ export function SignInPage() {
                 </button>
               ))}
             </div>
+          </div>
           </div>
         </div>
       </main>

@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   ArrowRight,
   MoveRight,
+  Mail,
   Users,
   BookOpenCheck,
 } from 'lucide-react';
@@ -132,9 +133,9 @@ export function LandingPage() {
         <div className="relative max-w-6xl mx-auto px-6 pt-16 pb-20 lg:pt-24 lg:pb-28 grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-white">
             <div className="text-eyebrow text-teal-300 mb-4">Campus management, unified</div>
-            <h1 className="text-4xl xl:text-5xl font-extrabold leading-[1.08] tracking-tight">
+            <h1 className="font-display text-4xl xl:text-[3.4rem] font-bold leading-[1.05] tracking-tight">
               Run your entire college
-              <span className="block text-teal-300">from one console.</span>
+              <span className="block text-gradient">from one console.</span>
             </h1>
             <p className="mt-5 text-[15px] leading-relaxed text-teal-50/80 max-w-md">
               Enrol students, take attendance, publish verified results and tell the right
@@ -145,7 +146,7 @@ export function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button
                 onClick={() => scrollToId('peek')}
-                className="inline-flex items-center gap-2 bg-white text-brand-800 text-sm font-bold px-5 py-2.5 rounded-lg shadow-card-lg hover:bg-teal-50 transition-colors"
+                className="inline-flex items-center gap-2 bg-white text-brand-800 text-sm font-bold px-5 py-2.5 rounded-lg shadow-card-lg hover:bg-teal-50 ring-glow transition-colors"
               >
                 Peek inside <MoveRight size={15} />
               </button>
@@ -159,14 +160,26 @@ export function LandingPage() {
 
             <div className="mt-10 flex items-center gap-6 text-teal-100/70">
               {[
-                { k: '3', v: 'consoles' },
+                { k: '3', v: 'role consoles' },
                 { k: '9', v: 'modules' },
                 { k: 'OTP', v: 'sign-in' },
+                { k: '0', v: 'spreadsheets' },
               ].map((s) => (
                 <div key={s.v}>
-                  <div className="text-xl font-extrabold text-white font-mono">{s.k}</div>
+                  <div className="font-display text-xl font-bold text-white font-mono">{s.k}</div>
                   <div className="text-eyebrow text-teal-200/60 mt-0.5">{s.v}</div>
                 </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              {['React', 'Express', 'PostgreSQL', 'Resend OTP'].map((t) => (
+                <span
+                  key={t}
+                  className="text-[10px] font-mono font-semibold px-2 py-1 rounded-md bg-white/10 border border-white/15 text-teal-100/70"
+                >
+                  {t}
+                </span>
               ))}
             </div>
           </div>
@@ -215,6 +228,21 @@ export function LandingPage() {
                     </div>
                     <div className="rounded-lg border border-slate-200/80 p-3">
                       <div className="flex items-center justify-between mb-2">
+                        <span className="text-eyebrow text-slate-400">Today's register — BCA 3rd sem</span>
+                        <CalendarCheck size={12} className="text-brand-600" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono font-bold text-slate-800">24/26</span>
+                        <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          present
+                        </span>
+                        <div className="flex-1 h-1.5 rounded bg-slate-100 overflow-hidden">
+                          <div className="h-full rounded bg-gradient-to-r from-brand-500 to-teal-400 w-[92%]" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-slate-200/80 p-3">
+                      <div className="flex items-center justify-between mb-2">
                         <span className="text-eyebrow text-slate-400">Recent announcements</span>
                         <Zap size={12} className="text-amber-400" />
                       </div>
@@ -244,6 +272,16 @@ export function LandingPage() {
                 Mid-Term schedule → batch BCA-2024-2027
               </div>
             </div>
+
+            {/* Floating OTP slip */}
+            <div className="absolute -top-7 -right-3 sm:-right-8 hidden lg:block w-44 rounded-xl bg-white shadow-card-lg border border-slate-200/80 p-3 rotate-2 animate-float-y">
+              <div className="flex items-center gap-1.5 text-brand-700">
+                <Mail size={12} />
+                <span className="text-eyebrow">Code sent</span>
+              </div>
+              <div className="mt-1.5 font-mono text-sm font-bold tracking-[0.3em] text-slate-800">384 912</div>
+              <div className="text-[9px] font-mono text-slate-400 mt-0.5">expires in 10 min</div>
+            </div>
           </div>
         </div>
       </section>
@@ -260,10 +298,10 @@ export function LandingPage() {
               key={f.title}
               className="group bg-white rounded-lg border border-slate-200/80 shadow-card p-5 hover:shadow-card-lg hover:-translate-y-0.5 transition-all"
             >
-              <span className="w-9 h-9 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center">
-                <f.icon size={17} className="text-brand-600" />
+              <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-600 to-brand-900 flex items-center justify-center shadow-card">
+                <f.icon size={17} className="text-teal-200" />
               </span>
-              <h3 className="mt-3 text-sm font-extrabold tracking-tight text-slate-900">{f.title}</h3>
+              <h3 className="mt-3 text-sm font-bold tracking-tight text-slate-900">{f.title}</h3>
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">{f.desc}</p>
             </div>
           ))}
@@ -291,8 +329,41 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ===== How it works ===== */}
+      <section id="how" className="max-w-6xl mx-auto px-6 pb-20 scroll-mt-20">
+        <div className="text-eyebrow text-brand-600 mb-2">Three steps, zero training</div>
+        <h2 className="text-2xl xl:text-3xl font-bold tracking-tight text-slate-900">
+          From sign-in to signed-off in minutes
+        </h2>
+        <div className="mt-8 grid sm:grid-cols-3 gap-4">
+          {[
+            {
+              n: '01',
+              t: 'Sign in with your email',
+              d: 'Request a 6-digit code — it lands in your inbox and expires in 10 minutes. No password to forget.',
+            },
+            {
+              n: '02',
+              t: 'Land in your console',
+              d: 'Admins, faculty and students each see exactly the tools their role needs — nothing extra, nothing hidden.',
+            },
+            {
+              n: '03',
+              t: 'Everything stays in sync',
+              d: 'Attendance, marks and notices write straight to PostgreSQL — no exports, no drift, one source of truth.',
+            },
+          ].map((s) => (
+            <div key={s.n} className="relative bg-white rounded-xl border border-slate-200/80 shadow-card p-5 hover:shadow-card-lg hover:-translate-y-0.5 transition-all">
+              <span className="text-eyebrow text-brand-400">{s.n}</span>
+              <h3 className="mt-1.5 text-sm font-bold tracking-tight text-slate-900">{s.t}</h3>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">{s.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ===== Consoles / roles ===== */}
-      <section id="roles" className="max-w-6xl mx-auto px-6 py-20 scroll-mt-20">
+      <section id="roles" className="max-w-6xl mx-auto px-6 pb-20 scroll-mt-20">
         <div className="text-eyebrow text-brand-600 mb-2">Pick your seat</div>
         <h2 className="text-2xl xl:text-3xl font-extrabold tracking-tight text-slate-900">
           A console for every role
@@ -305,6 +376,10 @@ export function LandingPage() {
               </span>
               <h3 className="mt-3 text-sm font-extrabold tracking-tight text-slate-900">{r.title}</h3>
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-500 flex-1">{r.desc}</p>
+              <div className="mt-3 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                <span className="uppercase tracking-wider">demo id</span>
+                <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 font-bold text-slate-600">{r.demo}</span>
+              </div>
               <button
                 onClick={() => navigate(`/login?demo=${r.demo}`)}
                 className="mt-4 inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-[13px] font-bold px-4 py-2.5 rounded-lg shadow-card transition-colors w-full"
@@ -320,7 +395,7 @@ export function LandingPage() {
       <section className="border-t border-slate-200/70 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
-            <h3 className="text-lg font-extrabold tracking-tight text-slate-900">
+            <h3 className="text-lg font-bold tracking-tight text-slate-900">
               Have your institution ID ready?
             </h3>
             <p className="text-[13px] text-slate-500 mt-1">
@@ -329,7 +404,7 @@ export function LandingPage() {
           </div>
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-6 py-3 rounded-lg shadow-card transition-colors shrink-0"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-700 hover:to-teal-700 text-white text-sm font-bold px-6 py-3 rounded-lg shadow-card transition-all shrink-0"
           >
             Sign in with email <ArrowRight size={15} />
           </Link>

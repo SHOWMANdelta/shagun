@@ -3,6 +3,9 @@
 @import '@fontsource/plus-jakarta-sans/600.css';
 @import '@fontsource/plus-jakarta-sans/700.css';
 @import '@fontsource/plus-jakarta-sans/800.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/600.css';
+@import '@fontsource/space-grotesk/700.css';
 @import '@fontsource/ibm-plex-mono/400.css';
 @import '@fontsource/ibm-plex-mono/500.css';
 
@@ -23,14 +26,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Headings: tight, confident display type */
+/* Headings: crisp geometric display type; colour inherits per context (dark hero/panels pass their own) */
 h1,
 h2,
 h3,
 h4 {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  letter-spacing: -0.02em;
-  color: #0b2129;
+  font-family: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
+  letter-spacing: -0.025em;
 }
 
 /* Numerals and IDs stay tabular + monospaced */
@@ -71,6 +73,17 @@ td {
   border-radius: 6px;
 }
 
+/* Ambient animations for the landing hero */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 /* Soft elevation used by cards */
 @layer utilities {
   .shadow-card {
@@ -89,6 +102,23 @@ td {
     font-weight: 500;
     letter-spacing: 0.14em;
     text-transform: uppercase;
+  }
+  .text-gradient {
+    background: linear-gradient(92deg, #2dd4bf 8%, #7dd3fc 48%, #a5f3fc 92%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .text-gradient-brand {
+    background: linear-gradient(92deg, #15616d 0%, #0d9488 55%, #14b8a6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ring-glow {
+    box-shadow:
+      0 0 0 1px rgba(45, 212, 191, 0.25),
+      0 8px 40px -8px rgba(21, 97, 109, 0.35);
   }
 }
 

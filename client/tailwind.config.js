@@ -21,8 +21,11 @@ export default {
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        display: ['"Space Grotesk"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'monospace'],
+      },
+      animation: {
+        'float-y': 'float-y 6s ease-in-out infinite',
       },
       borderRadius: {
         DEFAULT: '8px',
