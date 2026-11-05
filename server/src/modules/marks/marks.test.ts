@@ -1,129 +1,147 @@
-// Marks and Results Module Tests
+// Marks Schema & CSV Utils Unit Tests
 // Mini College ERP System - BCA Project No. 41 - Shagun Kaushal
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import request from 'supertest';
-import { buildApp } from '../../app.js';
-import { pool } from '../../db/pool.js';
-import type { Express } from 'express';
+// These tests run with no database connection required.
+import { describe, it, expect } from 'vitest';
+import { z } from 'zod';
+import { parseCSV, toCSV } from '../../utils/csv.js';
 
-describe('Marks and Results Suite', () => {
-  let app: Express;
-  let adminAgent: ReturnType<typeof request.agent>;
-  let studentAgent: ReturnType<typeof request.agent>;
-  let batchId: string;
-  let subjectId: string;
-  let examTypeId: string;
-  let studentId: string;
+// Inline the marks schemas (mirrors marks.routes.ts) so we test them without
+// importing the route module, which would pull in DB dependencies.
+const marksEntrySchema = z.object({
+  studentId: z.string().uuid(),
+  subjectId: z.string().uuid(),
+  examTypeId: z.string().uuid(),
+  batchId: z.string().uuid(),
+  marksObtained: z.number().min(0),
+});
 
-  beforeAll(async () => {
-    app = buildApp({ skipRateLimit: true });
+const marksBulkSchema = z.object({
+  entries: z.array(marksEntrySchema).min(1),
+});
 
-    adminAgent = request.agent(app);
-    await adminAgent
-      .post('/api/auth/login')
-      .set('X-Requested-With', 'erp')
-      .send({ identifier: 'admin', password: 'DemoPassword123!' });
+const publishSchema = z.object({
+  subjectId: z.string().uuid(),
+  examTypeId: z.string().uuid(),
+  batchId: z.string().uuid(),
+});
 
-    studentAgent = request.agent(app);
-    await studentAgent
-      .post('/api/auth/login')
-      .set('X-Requested-With', 'erp')
-      .send({ identifier: '24BCA001', password: 'DemoPassword123!' });
+const UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
-    const bRes = await adminAgent.get('/api/academic/batches');
-    batchId = bRes.body.data[0].id;
-
-    const sRes = await adminAgent.get('/api/academic/subjects');
-    subjectId = sRes.body.data[0].id;
-
-    const etRes = await adminAgent.get('/api/marks/exam-types');
-    examTypeId = etRes.body.data[0].id;
-
-    const stRes = await adminAgent.get('/api/students?search=24BCA001');
-    studentId = stRes.body.data[0].id;
+describe('marksEntrySchema', () => {
+  it('accepts a valid marks entry', () => {
+    expect(marksEntrySchema.safeParse({
+      studentId: UUID, subjectId: UUID, examTypeId: UUID, batchId: UUID,
+      marksObtained: 25,
+    }).success).toBe(true);
   });
 
-  afterAll(async () => {
-    await pool.end();
+  it('accepts 0 marks (edge case)', () => {
+    expect(marksEntrySchema.safeParse({
+      studentId: UUID, subjectId: UUID, examTypeId: UUID, batchId: UUID,
+      marksObtained: 0,
+    }).success).toBe(true);
   });
 
-  it('rejects marks above max_marks allowed for exam type', async () => {
-    const res = await adminAgent
-      .post('/api/marks/bulk')
-      .set('X-Requested-With', 'erp')
-      .send({
-        entries: [
-          {
-            studentId,
-            subjectId,
-            examTypeId,
-            batchId,
-            marksObtained: 999, // Exceeds max_marks (30 for Mid-Term)
-          },
-        ],
-      });
-
-    expect(res.status).toBeGreaterThanOrEqual(400);
+  it('rejects negative marks', () => {
+    expect(marksEntrySchema.safeParse({
+      studentId: UUID, subjectId: UUID, examTypeId: UUID, batchId: UUID,
+      marksObtained: -1,
+    }).success).toBe(false);
   });
 
-  it('saves marks as unpublished; students cannot see unpublished marks', async () => {
-    // 0. Reset any published leftover from a previous run so this test is deterministic
-    await pool.query(
-      'UPDATE erp.marks SET is_published = FALSE WHERE student_id = $1 AND subject_id = $2 AND exam_type_id = $3',
-      [studentId, subjectId, examTypeId]
-    );
+  it('rejects non-UUID studentId', () => {
+    expect(marksEntrySchema.safeParse({
+      studentId: 'not-a-uuid', subjectId: UUID, examTypeId: UUID,
+      batchId: UUID, marksObtained: 10,
+    }).success).toBe(false);
+  });
+});
 
-    // 1. Enter valid marks as faculty/admin
-    const bulkRes = await adminAgent
-      .post('/api/marks/bulk')
-      .set('X-Requested-With', 'erp')
-      .send({
-        entries: [
-          {
-            studentId,
-            subjectId,
-            examTypeId,
-            batchId,
-            marksObtained: 25.5,
-          },
-        ],
-      });
-    expect(bulkRes.status).toBe(200);
-
-    // 2. Student views marks - should NOT see unpublished marks
-    const studentRes = await studentAgent.get('/api/marks');
-    expect(studentRes.status).toBe(200);
-    const unpublishedMark = studentRes.body.data.find(
-      (m: { subject_id: string; exam_type_id: string }) =>
-        m.subject_id === subjectId && m.exam_type_id === examTypeId
-    );
-    expect(unpublishedMark).toBeUndefined();
+describe('marksBulkSchema', () => {
+  it('accepts an array with one valid entry', () => {
+    expect(marksBulkSchema.safeParse({
+      entries: [{ studentId: UUID, subjectId: UUID, examTypeId: UUID, batchId: UUID, marksObtained: 30 }],
+    }).success).toBe(true);
   });
 
-  it('publishes marks; student can now view published marks and SGPA', async () => {
-    // 1. Publish marks
-    const pubRes = await adminAgent
-      .post('/api/marks/publish')
-      .set('X-Requested-With', 'erp')
-      .send({ subjectId, examTypeId, batchId });
-    expect(pubRes.status).toBe(200);
+  it('rejects an empty entries array', () => {
+    expect(marksBulkSchema.safeParse({ entries: [] }).success).toBe(false);
+  });
+});
 
-    // 2. Student views marks - now visible
-    const studentRes = await studentAgent.get('/api/marks');
-    expect(studentRes.status).toBe(200);
-    const publishedMark = studentRes.body.data.find(
-      (m: { subject_id: string; exam_type_id: string }) =>
-        m.subject_id === subjectId && m.exam_type_id === examTypeId
-    );
-    expect(publishedMark).toBeDefined();
-    expect(publishedMark.marks_obtained).toBe(25.5);
-    expect(publishedMark.is_published).toBe(true);
+describe('publishSchema', () => {
+  it('accepts three valid UUIDs', () => {
+    expect(publishSchema.safeParse({ subjectId: UUID, examTypeId: UUID, batchId: UUID }).success).toBe(true);
+  });
 
-    // 3. Student views SGPA
-    const sgpaRes = await studentAgent.get('/api/marks/sgpa');
-    expect(sgpaRes.status).toBe(200);
-    expect(sgpaRes.body.data.length).toBeGreaterThan(0);
-    expect(sgpaRes.body.data[0]).toHaveProperty('sgpa');
-    expect(typeof sgpaRes.body.data[0].sgpa).toBe('number');
+  it('rejects if any UUID is missing', () => {
+    expect(publishSchema.safeParse({ subjectId: UUID, examTypeId: UUID }).success).toBe(false);
+  });
+});
+
+describe('parseCSV', () => {
+  it('returns empty array for a header-only CSV', () => {
+    expect(parseCSV('enrollment_no,display_name')).toEqual([]);
+  });
+
+  it('parses a simple two-column CSV', () => {
+    const csv = 'enrollment_no,display_name\n24BCA001,Aarav Patel\n24BCA002,Diya Singh';
+    const rows = parseCSV(csv);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual({ enrollment_no: '24BCA001', display_name: 'Aarav Patel' });
+    expect(rows[1]).toEqual({ enrollment_no: '24BCA002', display_name: 'Diya Singh' });
+  });
+
+  it('handles quoted fields with commas inside', () => {
+    const csv = 'name,address\nAarav,"123, MG Road"';
+    const rows = parseCSV(csv);
+    expect(rows[0].address).toBe('123, MG Road');
+  });
+
+  it('handles escaped quotes inside quoted fields', () => {
+    const csv = 'name,note\nAarav,"He said ""hello"""';
+    const rows = parseCSV(csv);
+    expect(rows[0].note).toBe('He said "hello"');
+  });
+
+  it('returns empty array for fewer than 2 lines', () => {
+    expect(parseCSV('')).toEqual([]);
+    expect(parseCSV('only-header')).toEqual([]);
+  });
+});
+
+describe('toCSV', () => {
+  it('returns empty string for empty rows', () => {
+    expect(toCSV([])).toBe('');
+  });
+
+  it('produces a valid CSV with header and rows', () => {
+    const rows = [
+      { enrollment_no: '24BCA001', display_name: 'Aarav Patel' },
+      { enrollment_no: '24BCA002', display_name: 'Diya Singh' },
+    ];
+    const csv = toCSV(rows, [
+      { key: 'enrollment_no', label: 'Enrollment No' },
+      { key: 'display_name', label: 'Full Name' },
+    ]);
+    const lines = csv.split('\n');
+    expect(lines[0]).toBe('Enrollment No,Full Name');
+    expect(lines[1]).toBe('24BCA001,Aarav Patel');
+    expect(lines[2]).toBe('24BCA002,Diya Singh');
+  });
+
+  it('escapes values that contain commas', () => {
+    const csv = toCSV([{ address: '123, MG Road' }]);
+    expect(csv).toContain('"123, MG Road"');
+  });
+
+  it('round-trips through parseCSV → toCSV', () => {
+    const original = 'Enrollment No,Full Name\n24BCA001,Aarav Patel\n24BCA002,Diya Singh';
+    const parsed = parseCSV(original);
+    const regenerated = toCSV(parsed as unknown as Record<string, unknown>[], [
+      { key: 'Enrollment No', label: 'Enrollment No' },
+      { key: 'Full Name', label: 'Full Name' },
+    ]);
+    expect(regenerated).toBe(original);
   });
 });

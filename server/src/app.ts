@@ -2,8 +2,6 @@ import express, { Express } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import cors from 'cors';
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
@@ -28,6 +26,7 @@ import { noticesRouter } from './modules/notices/notices.routes.js';
 import { dashboardRouter } from './modules/dashboard/dashboard.routes.js';
 import { settingsRouter } from './modules/settings/settings.routes.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PgStore = connectPgSimple(session);
 const logger = pino({ name: 'app' });
 
@@ -43,9 +42,19 @@ export function buildApp(options: AppOptions = {}): Express {
   // Security headers
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-  // CORS — allow Vite dev server
+  // CORS — allow Vite dev server + any Vercel preview/production domain.
+  // On Vercel the client and server share the same origin so the browser sends
+  // no Origin header; the allowedOrigins list acts as a belt-and-suspenders
+  // guard for preview deployments that call the API from a different subdomain.
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:4000',
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    ...(process.env.VERCEL_BRANCH_URL ? [`https://${process.env.VERCEL_BRANCH_URL}`] : []),
+  ];
+
   app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:4000'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-Requested-With', 'X-Request-Id'],
@@ -69,7 +78,7 @@ export function buildApp(options: AppOptions = {}): Express {
     tableName: 'session',
     schemaName: 'erp',
     createTableIfMissing: false,
-    pruneSessionInterval: 60 * 15, // prune every 15 min
+    pruneSessionInterval: 60 * 15,
   });
 
   app.use(session({
@@ -86,7 +95,7 @@ export function buildApp(options: AppOptions = {}): Express {
     name: 'erp.sid',
   }));
 
-  // Rate limiters (injectable / disabled in test mode for deterministic execution)
+  // Rate limiters — disabled in test mode
   if (!options.skipRateLimit && env.NODE_ENV !== 'test') {
     app.use('/api', rateLimit({
       windowMs: 15 * 60 * 1000,
@@ -137,7 +146,8 @@ export function buildApp(options: AppOptions = {}): Express {
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/settings', settingsRouter);
 
-  // Production SPA static file serving
+  // Serve built client for local `pnpm start` (not used on Vercel — Vercel CDN
+  // serves client/dist directly and only forwards /api/* to this function).
   const clientDist = path.resolve(__dirname, '../../client/dist');
   app.use(express.static(clientDist));
   app.get('*', (req, res, next) => {

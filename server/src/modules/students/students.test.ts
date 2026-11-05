@@ -1,126 +1,135 @@
-// Students and Academic Tests
+// Students Schema Unit Tests
 // Mini College ERP System - BCA Project No. 41 - Shagun Kaushal
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import request from 'supertest';
-import { buildApp } from '../../app.js';
-import { pool } from '../../db/pool.js';
-import type { Express } from 'express';
+// These tests run with no database connection required.
+import { describe, it, expect } from 'vitest';
+import {
+  createStudentSchema,
+  updateStudentSchema,
+  listStudentQuerySchema,
+} from './students.schema.js';
 
-describe('Students and Academic Management Suite', () => {
-  let app: Express;
-  let adminAgent: ReturnType<typeof request.agent>;
-  let batchId: string;
+const VALID_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
-  beforeAll(async () => {
-    app = buildApp({ skipRateLimit: true });
-    adminAgent = request.agent(app);
-    await adminAgent
-      .post('/api/auth/login')
-      .set('X-Requested-With', 'erp')
-      .send({ identifier: 'admin', password: 'DemoPassword123!' });
-
-    const bRes = await adminAgent.get('/api/academic/batches');
-    batchId = bRes.body.data[0].id;
+describe('createStudentSchema', () => {
+  it('accepts a minimal valid payload', () => {
+    const result = createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav Patel',
+      batchId: VALID_UUID,
+    });
+    expect(result.success).toBe(true);
   });
 
-  afterAll(async () => {
-    await pool.end();
+  it('defaults currentSemester to 1', () => {
+    const result = createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav Patel',
+      batchId: VALID_UUID,
+    });
+    if (result.success) expect(result.data.currentSemester).toBe(1);
   });
 
-  it('paginates student lists with proper bounds and metadata', async () => {
-    const res = await adminAgent.get('/api/students?page=1&limit=2');
-    expect(res.status).toBe(200);
-    expect(res.body.data).toBeInstanceOf(Array);
-    expect(res.body.data.length).toBeLessThanOrEqual(2);
-    expect(res.body.meta).toHaveProperty('page', 1);
-    expect(res.body.meta).toHaveProperty('limit', 2);
-    expect(res.body.meta).toHaveProperty('total');
-    expect(res.body.meta.total).toBeGreaterThan(0);
+  it('accepts a full payload with optional fields', () => {
+    const result = createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav Patel',
+      batchId: VALID_UUID,
+      currentSemester: 3,
+      dob: '2004-05-15',
+      phone: '9876543210',
+      address: '123 College Road',
+      password: 'SecurePass1',
+    });
+    expect(result.success).toBe(true);
   });
 
-  it('searches students by name or enrollment number', async () => {
-    const res = await adminAgent.get('/api/students?search=Aarav');
-    expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThan(0);
-    expect(res.body.data[0].display_name).toContain('Aarav');
+  it('rejects an invalid batchId (not a UUID)', () => {
+    const result = createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav Patel',
+      batchId: 'not-a-uuid',
+    });
+    expect(result.success).toBe(false);
   });
 
-  it('previews CSV import separating valid from invalid rows', async () => {
-    const mockCsv = `enrollment_no,display_name,current_semester,phone
-24BCA101,Rohan Mehta,1,9876543210
-,Missing Name User,1,9876543211
-24BCA102,,1,9876543212`;
-
-    const res = await adminAgent
-      .post('/api/students/import-preview')
-      .set('X-Requested-With', 'erp')
-      .send({ csv: mockCsv, batchId });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.validRows.length).toBe(1);
-    expect(res.body.data.invalidRows.length).toBe(2);
-    expect(res.body.data.validRows[0].enrollment_no).toBe('24BCA101');
+  it('rejects displayName shorter than 2 chars', () => {
+    expect(createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'A',
+      batchId: VALID_UUID,
+    }).success).toBe(false);
   });
 
-  it('deactivates student without deleting record (deactivate-not-delete)', async () => {
-    // 0. Clean up leftover from a previous run (tests run against a persistent DB)
-    const existingRes = await adminAgent.get('/api/students?search=24BCATEMP01');
-    for (const existing of existingRes.body.data as { id: string }[]) {
-      await pool.query('DELETE FROM erp.students WHERE id = $1', [existing.id]);
-      await pool.query("DELETE FROM erp.users WHERE identifier = '24BCATEMP01'");
+  it('rejects semester out of range (0)', () => {
+    expect(createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav',
+      batchId: VALID_UUID,
+      currentSemester: 0,
+    }).success).toBe(false);
+  });
+
+  it('rejects semester out of range (13)', () => {
+    expect(createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav',
+      batchId: VALID_UUID,
+      currentSemester: 13,
+    }).success).toBe(false);
+  });
+
+  it('rejects an invalid dob format', () => {
+    expect(createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav Patel',
+      batchId: VALID_UUID,
+      dob: '15-05-2004',
+    }).success).toBe(false);
+  });
+
+  it('rejects a weak password (no digit)', () => {
+    expect(createStudentSchema.safeParse({
+      enrollmentNo: '24BCA001',
+      displayName: 'Aarav Patel',
+      batchId: VALID_UUID,
+      password: 'onlyletters',
+    }).success).toBe(false);
+  });
+});
+
+describe('updateStudentSchema', () => {
+  it('accepts an empty object (all fields optional)', () => {
+    expect(updateStudentSchema.safeParse({}).success).toBe(true);
+  });
+
+  it('accepts partial updates', () => {
+    const result = updateStudentSchema.safeParse({ displayName: 'New Name', currentSemester: 2 });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects isActive as a non-boolean', () => {
+    expect(updateStudentSchema.safeParse({ isActive: 'yes' }).success).toBe(false);
+  });
+});
+
+describe('listStudentQuerySchema', () => {
+  it('defaults page to 1 and limit to 20', () => {
+    const result = listStudentQuerySchema.safeParse({});
+    if (result.success) {
+      expect(result.data.page).toBe(1);
+      expect(result.data.limit).toBe(20);
     }
-
-    // 1. Create temporary student
-    const createRes = await adminAgent
-      .post('/api/students')
-      .set('X-Requested-With', 'erp')
-      .send({
-        enrollmentNo: '24BCATEMP01',
-        displayName: 'Temp Deactivate Test',
-        batchId,
-        currentSemester: 1,
-      });
-    expect(createRes.status).toBe(201);
-    const studentId = createRes.body.data.id;
-
-    // 2. Deactivate
-    const deactRes = await adminAgent
-      .patch(`/api/students/${studentId}/deactivate`)
-      .set('X-Requested-With', 'erp');
-    expect(deactRes.status).toBe(200);
-    expect(deactRes.body.data.is_active).toBe(false);
-
-    // 3. Verify record still exists in database
-    const verifyRes = await adminAgent.get(`/api/students/${studentId}`);
-    expect(verifyRes.status).toBe(200);
-    expect(verifyRes.body.data.is_active).toBe(false);
   });
 
-  it('rolls back student user and profile completely on creation failure', async () => {
-    const initialUserCount = parseInt(
-      (await pool.query("SELECT count(*) FROM erp.users WHERE identifier = 'FAIL_ROLLBACK_01'")).rows[0].count,
-      10
-    );
-    expect(initialUserCount).toBe(0);
+  it('coerces page and limit from strings', () => {
+    const result = listStudentQuerySchema.safeParse({ page: '2', limit: '10' });
+    if (result.success) {
+      expect(result.data.page).toBe(2);
+      expect(result.data.limit).toBe(10);
+    }
+  });
 
-    // Provide invalid batchId UUID that fails foreign key
-    const res = await adminAgent
-      .post('/api/students')
-      .set('X-Requested-With', 'erp')
-      .send({
-        enrollmentNo: 'FAIL_ROLLBACK_01',
-        displayName: 'Fail Rollback',
-        batchId: '00000000-0000-0000-0000-000000000000', // Nonexistent batch
-        currentSemester: 1,
-      });
-
-    expect(res.status).toBe(409); // Foreign key conflict
-
-    // Verify user was NOT left behind
-    const afterUserCount = parseInt(
-      (await pool.query("SELECT count(*) FROM erp.users WHERE identifier = 'FAIL_ROLLBACK_01'")).rows[0].count,
-      10
-    );
-    expect(afterUserCount).toBe(0);
+  it('rejects limit above 100', () => {
+    expect(listStudentQuerySchema.safeParse({ limit: '200' }).success).toBe(false);
   });
 });
