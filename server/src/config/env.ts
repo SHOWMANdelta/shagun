@@ -35,7 +35,10 @@ const envSchema = z.object({
       }
       return parsedPort;
     }),
-  SEED_PASSWORD: z.string().default('DemoPassword123!'),
+  SEED_PASSWORD: z
+    .string()
+    .min(12, 'SEED_PASSWORD must be at least 12 characters long')
+    .default('DemoPassword123!'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   // Email OTP (Resend). Optional: OTP login reports EMAIL_NOT_CONFIGURED when missing.
   RESEND_API_KEY: z.string().optional(),
