@@ -6,6 +6,7 @@
   "author": "Shagun Kaushal",
   "license": "UNLICENSED",
   "type": "module",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",

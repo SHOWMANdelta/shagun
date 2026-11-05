@@ -1,17 +1,16 @@
 # Deploying to Vercel
 
-This project is deployed as **one Vercel project**:
+This project is deployed as **one Vercel project with two services**:
 
-- Vite builds the client into `client/dist`, which Vercel serves as static
-  files.
-- `api/[...path].ts` exposes the Express server as a Vercel Function.
-- The client calls `/api/...` on the same origin, so a separate API deployment
-  or client API URL is not needed.
+- **`client`** (`client/`, Vite) — built into static assets for the React SPA.
+- **`server`** (`server/`, Express) — handles all `/api/...` endpoints.
 - PostgreSQL is hosted separately (for example, on Neon). Vercel does not
   provide the database for this project.
 
-`vercel.json` must stay at the repository root. Its SPA rewrite deliberately
-excludes `/api` so API calls reach the Express Function instead of `index.html`.
+`vercel.json` at the repository root uses Vercel's Multi-Service architecture:
+- `/api/(.*)` routes to the `server` service.
+- `/(.*)` routes to the `client` service.
+
 
 ## 1. Prepare a production database
 
