@@ -1,7 +1,7 @@
 {
   "name": "mini-college-erp",
   "version": "1.0.0",
-  "packageManager": "pnpm@11.12.0",
+  "packageManager": "pnpm@11.28.11",
   "private": true,
   "type": "module",
   "description": "Mini College ERP System - BCA Project No. 41 by Shagun Kaushal",
