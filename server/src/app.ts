@@ -73,12 +73,12 @@ export function buildApp(options: AppOptions = {}): Express {
   }
 
   // Early check for missing environment configuration on cloud platforms (e.g. Vercel)
-  if (envValidationIssues) {
+  if (envValidationIssues || !env.DATABASE_URL) {
     app.use('/api', (req, res) => {
       res.status(500).json({
         error: {
           code: 'ENV_MISCONFIGURED',
-          message: `Server environment variables are missing on Vercel: ${envValidationIssues}. Please set them in your Vercel Project Settings > Environment Variables and redeploy.`,
+          message: `Server environment variables are missing on Vercel: ${envValidationIssues || 'DATABASE_URL is missing'}. Please configure them in Vercel Project Settings > Environment Variables and redeploy.`,
         },
       });
     });

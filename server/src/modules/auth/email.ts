@@ -17,9 +17,9 @@ interface SendOtpEmailInput {
  * client can show a clean error instead of leaking a stack trace.
  */
 export async function sendOtpEmail(input: SendOtpEmailInput): Promise<void> {
-  if (!env.RESEND_API_KEY) {
+  if (!env.RESEND_API_KEY && !env.BREVO_API_KEY) {
     throw new AppError(
-      'Email service is not configured yet (missing RESEND_API_KEY). Use password sign-in.',
+      'Email service is not configured yet (missing RESEND_API_KEY or BREVO_API_KEY). Use password sign-in.',
       503,
       'EMAIL_NOT_CONFIGURED'
     );
@@ -53,6 +53,32 @@ export async function sendOtpEmail(input: SendOtpEmailInput): Promise<void> {
     </table>
   </body>
 </html>`;
+
+  if (env.BREVO_API_KEY) {
+    const senderEmail = env.EMAIL_FROM || 'nexusdm77@gmail.com';
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { name: env.OTP_SENDER_NAME, email: senderEmail },
+        to: [{ email: input.to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new AppError(
+        'Failed to send the OTP email via Brevo. Please try again or use password sign-in.',
+        502,
+        'EMAIL_SEND_FAILED'
+      );
+    }
+    return;
+  }
 
   const res = await fetch(RESEND_ENDPOINT, {
     method: 'POST',

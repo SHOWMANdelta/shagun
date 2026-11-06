@@ -40,10 +40,12 @@ const envSchema = z.object({
     .min(12, 'SEED_PASSWORD must be at least 12 characters long')
     .default('DemoPassword123!'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  // Email OTP (Resend). Optional: OTP login reports EMAIL_NOT_CONFIGURED when missing.
+  // Email OTP (Resend or Brevo). Optional: OTP login reports EMAIL_NOT_CONFIGURED when missing.
   RESEND_API_KEY: z.string().optional(),
   OTP_SENDER_EMAIL: z.string().default('onboarding@resend.dev'),
   OTP_SENDER_NAME: z.string().default('Mini College ERP'),
+  BREVO_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
